@@ -10,7 +10,7 @@ TileStack::TileStack()
 		{
 			for(int k = 0; k < 1; k++) { tiles.push_back(tile); }
 		}
-		if (i == 3 || i == 14 || i == 16 || i == 18 || i == 19 || i == 20 || i == 23 || i == 25 || i == 27 || i == 28)
+		if (i == 3 || i == 14 || i == 16 || i == 18 || i == 19 || i == 20 || i == 23 || i == 25 || i == 27 || i == 28 || i == 29)
 		{
 			for(int k = 0; k < 2; k++) { tiles.push_back(tile); }
 		}

@@ -1,5 +1,5 @@
 ﻿#include "Adapter.h"
-/*Adapter translates messages sent by the server into types congruent 
+/*Adapter translates messages sent by the server into types congruent
 with our internal Game structure and vice versa*/
 
 Adapter::Adapter() {}
@@ -9,10 +9,11 @@ Adapter::~Adapter() {}
 /*Converts an tile number to the appropriate tile string
 GAME->SERVER*/
 std::string Adapter::tileToExpr(int i){
-	std::string tiles[28] = {"JJJJ-", "JJJJX", "JJTJX", "TTTT-", "TJTJ-",
-		"TJJT-" , "TJTT-", "LLLL-", "JLLL-" , "LLJJ-", "JLJL-", "LJLJ-",
-		"LJJJ-", "JLLJ-", "TLJT-", "TLJTP", "JLTT-", "JLTTB", "TLTJ-" ,
-		"TLTJD", "TLLL-", "TLTT-" , "TLTTP", "TLLT-" , "TLLTB" , "LJTJ-", "LJTJD", "TLLLC"};
+	std::string tiles[29] = {"JJJJ-", "JJJJX", "JJTJX", "TTTT-", "TJTJ-",
+		"TJJT-", "TJTT-", "LLLL-", "JLLL-", "LLJJ-", "JLJL-", "LJLJ-",
+		"LJJJ-", "JLLJ-", "TLJT-", "TLJTP", "JLTT-", "JLTTB", "TLTJ-",
+		"TLTJD", "TLLL-", "TLTT-", "TLTTP", "TLLT-", "TLLTB", "LJTJ-",
+		"LJTJD", "TLLLC", "LTLL-"};
 	return tiles[i-1];
 }
 
@@ -133,6 +134,10 @@ int Adapter::exprToTile(std::string &expr)
 	{
 		return 28;
 	}
+	if (expr == "LTLT-")
+	{
+		return 29;
+	}
 	return -1;
 
 }
@@ -150,7 +155,7 @@ int Adapter::numRotations(const int x) {
 
 	return numRotations;
 }
-/*Parses through message reccieved by the server and stores each word in a 
+/*Parses through message reccieved by the server and stores each word in a
 string vector. */
 std::vector<std::string> Adapter::convertExpression(const std::string& expr) {
 	// Convert to stream
@@ -209,17 +214,17 @@ std::string Adapter::getTileString(const int& index) {
 	return this->tileList[index];
 }
 
-/*Converts coordinates given by the server to the system of coordinates used in 
+/*Converts coordinates given by the server to the system of coordinates used in
 game logic
 SERVER->CLIENT*/
-std::pair<int, int> Adapter::convertCoordinates(int x, int y)  
+std::pair<int, int> Adapter::convertCoordinates(int x, int y)
 {
 	int row = 72 - y;
 	int col = x + 72;
 	return std::pair<int, int> (row, col);
 }
 
-/*Converts coordinates given by client to those that can be understood by the 
+/*Converts coordinates given by client to those that can be understood by the
 server
 CLIENT->SERVER*/
 std::pair<int, int> Adapter::convertCoordinates(std::pair<int, int> location) //convert from client to server
@@ -229,7 +234,7 @@ std::pair<int, int> Adapter::convertCoordinates(std::pair<int, int> location) //
 	return std::pair<int, int>(x, y);
 }
 
-/*Converts zone coordinates given by client to zone number 
+/*Converts zone coordinates given by client to zone number
 used by server
 CLIENT->SERVER*/
 int Adapter::convertZone(std::pair<int, int> location)
@@ -272,7 +277,7 @@ std::pair<int, int> Adapter::convertZone(int spot)
 	else if(spot == 9) return std::pair<int, int>(2,2);
 }
 
-/*Reads the first word of the message sent by server then calls the appropriate 
+/*Reads the first word of the message sent by server then calls the appropriate
 parsing method*/
 values_t Adapter::translate(std::string message)
 {

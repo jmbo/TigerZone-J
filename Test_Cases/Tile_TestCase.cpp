@@ -1,4 +1,4 @@
-#include "../Tile.h"
+#include "../Tile_Structure/Tile.h"
 #include <iostream>
 
 void print_tile(Tile &tile)
