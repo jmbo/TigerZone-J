@@ -12,12 +12,16 @@ Game::Game(std::string gameId, Player p1, Player p2, TileStack t, Tile startingT
 	gameboard.place_tile(startingCoordinates, *startTile);
 
 	numMeeples = 7;
+	numGoats = 3;
 	player1 = p1;
 	player2 = p2;
 	this->gameId = gameId;
 	tileStack = t;
 }
+Game::Game()
+{
 
+}
 Game::~Game()
 {
 
@@ -73,7 +77,7 @@ void Game::play() {
 }
 
 //function for the other player making a move
-void Game::enemyMove(Tile tile, int i, int j, int orientation, bool tiger, bool croc, std::pair<int,int> tigerSpot)
+void Game::enemyMove(Tile tile, int i, int j, int orientation, bool goat, bool tiger, bool croc, std::pair<int,int> tigerSpot)
 {
 	//create a tile to place
   Tile *tmpTile = new Tile(tile.getNum());
@@ -83,18 +87,21 @@ void Game::enemyMove(Tile tile, int i, int j, int orientation, bool tiger, bool 
     tmpTile->rotate();
   }
 	std::pair<int, int> optimalLocation(i,j);
-	//place the tile at the location specified 
+	//place the tile at the location specified
   gameboard.place_tile(optimalLocation, *tmpTile);
-  // if there is a tiger place it 
+  // if there is a tiger place it
   if(tiger) gameboard.placeMeeple(i, j, tigerSpot);
   // if there is a croc place it
   if(croc) gameboard.placeCroc(i ,j);
+	// if goat place it
+	if(goat) gameboard.placeGoat(i, j);
 }
 
 // returns the move string for the server
 std::string Game::makeMove(Tile tile, std::string moveNumber) {
   std::string placement;
   std::string tiger = " NONE";
+	std::string goat = " NONE";
   Adapter adapter;
 
 	// get all location the tile can be placed at
@@ -114,13 +121,26 @@ std::string Game::makeMove(Tile tile, std::string moveNumber) {
 			// if we placed a tiger subtract from the number of tigers we have
 			if (tiger != " NONE") numMeeples--;
 		}
+		//if not placing a tiger run the goat ai to place a goat
+		if(numGoats > 0 && tiger == " NONE")
+		{
+			//try to place a goat
+			goat = goatAi(optimalLocation.first, optimalLocation.second);
+			//if a goat is being placed subtract from the number of goats obtained
+			if (goat != " NONE") numGoats--;
+		}
+
 
 		std::pair<int,int> convertCoordinates = adapter.convertCoordinates(optimalLocation);
 		//debugging std::cout << "DEBUG: Optimal location first: " << optimalLocation.first << std::endl;
 		//debugging std::cout << "DEBUG: Optimal location second: " << optimalLocation.second << std::endl;
 		placement = "GAME " + gameId + " MOVE " + moveNumber + " PLACE " + adapter.tileToExpr(tmpTile->getNum()) +" AT " + std::to_string(convertCoordinates.first) + " " + std::to_string(convertCoordinates.second)  + " " + std::to_string(tmpTile->getRotations() * 90);
-
-		return placement + tiger + "\r\n";
+		if (tiger != " NONE")
+			return placement + tiger + "\r\n";
+		if (goat != " NONE")
+			return placement + goat + "\r\n";
+		else
+			return placement + " NONE" + "\r\n";
 	}
 	else {
 		return "GAME " + gameId + " MOVE " + moveNumber + " TILE " + adapter.tileToExpr(tile.getNum()) +" UNPLACEABLE PASS\r\n";
@@ -183,6 +203,29 @@ std::string Game::meepleAi(int i, int j)
 	return tiger;
 }
 
+// Checking if goat placement is allowed and if so places a goat on the tile
+std::string Game::goatAi(int i, int j)
+{
+	std::string goat = " NONE";
+	bool ableToPlaceGoat = false;
+	std::vector< std::vector<Block> > tileBlocks = gameboard.m_board[i][j]->getInnerBlocks();
+	//check to see if a goat is already placed on tile
+	if (gameboard.m_board[i][j]->hasGoat()) return goat;
+	//checks each block of the tile to make sure there is a lake or trail component that allows
+	//the placement of a goat
+	for (i = 0; i < 3; i++)
+	{
+		for (j = 0; i < 3; j++)
+			if (tileBlocks[i][j].getType() == "lake" || tileBlocks[i][j].getType() == "trail")
+			{
+				ableToPlaceGoat = true;
+				goat = " GOAT";
+				break;
+			}
+			if (ableToPlaceGoat) break;
+	}
+	return goat;
+}
 // add points according to values for different kind of features
 int Game::structurePoints(Structure structure)
 {
@@ -194,7 +237,7 @@ int Game::structurePoints(Structure structure)
 	const int PREY_POINTS = 1;
 	const int CROC_POINTS = -2;
 	/*
-	This entire thing is just checking the type of the structure and anything 
+	This entire thing is just checking the type of the structure and anything
 	it has and adding points to a specific location to find the "best one"
 	*/
 	for (size_t i = 0; i < structure.structureBlocks.size(); i++)
@@ -222,6 +265,10 @@ int Game::structurePoints(Structure structure)
 		points += PREY_POINTS;
 	}
 	for (int i = 0; i < structure.buffaloCount; i++)
+	{
+		points += PREY_POINTS;
+	}
+	for (int i = 0; i < structure.goatCount; i++)
 	{
 		points += PREY_POINTS;
 	}

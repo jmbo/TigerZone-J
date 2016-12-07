@@ -27,6 +27,7 @@
 
 #define TERMINATE_CHALLENGE "END OF CHALLENGES"
 
+std::string PLAYER_ID;
 
 void printToTextFile(Board gameboard) //Prints the game board to a text file
 {
@@ -183,7 +184,7 @@ int moveProtocol(Client &client, std::string &message_list, Game &game1, Game &g
 						//std::cout << "		tile placed at <" << i << ", " << j << "> " << "with rotation: " << orientation << std::endl;
 						//std::cout << "		croc? " << message_info.croc << " tiger? " << message_info.tiger << " zone " << "[" <<message_info.tiger_spot.first << ", " << message_info.tiger_spot.second << "] " << std::endl;
 						tmpTile = Tile(message_info.tile_num);
-						game1.enemyMove(tmpTile, i, j, orientation, message_info.tiger, message_info.croc, message_info.tiger_spot);
+						game1.enemyMove(tmpTile, i, j, orientation, message_info.goat, message_info.tiger, message_info.croc, message_info.tiger_spot);
 					}
 					else if (message_info.gameId == game2.getID())
 					{
@@ -192,7 +193,7 @@ int moveProtocol(Client &client, std::string &message_list, Game &game1, Game &g
 						//std::cout << "		croc? " << message_info.croc << " tiger? " << message_info.tiger << " zone " << "[" <<message_info.tiger_spot.first << ", " << message_info.tiger_spot.second << "] " << std::endl;
 						//tmpTile = Tile(message_info.tile_num);
 						//debugging std::cout << "DEBUG FLAG" << std::endl;
-						game2.enemyMove(tmpTile, i, j, orientation, message_info.tiger, message_info.croc, message_info.tiger_spot);
+						game2.enemyMove(tmpTile, i, j, orientation, message_info.goat, message_info.tiger, message_info.croc, message_info.tiger_spot);
 						//debugging std::cout << "DEBUG FLAG 2" << std::endl;
 					}
 				}
@@ -211,9 +212,11 @@ void matchProtocol(Client &client, std::string &message_list)
 	Adapter adapter;
 	values_t message_info;
 	int number_of_tiles, game1_success, game2_success;
-	int count = 0;
+	int count = 2;
 	bool lastMessage = true;
-	std::string OPPONENT_ID;
+	Game game1, game2;
+	Player ai, opponent;
+	std::string OPPONENT_ID, GAME_ID, message_to_send1, message_to_send2;
 	std::string message = getMesssage(client, message_list);
 	std::cout << GREEN << "Server sent: " << RESET << message << std::endl;
 	Tile tile1;
@@ -253,9 +256,8 @@ void matchProtocol(Client &client, std::string &message_list)
 			std::cout << "	MATCH BEGINS SOON" << std::endl;
 			message_info = adapter.translate(message);
 			//use planning time
-			Player ai, opponent;
-			Game game1("", ai, opponent, tStack, tile1, std::pair<int,int> (72,72));
-			Game game2("", opponent, ai, tStack, tile1, std::pair<int,int> (72,72));
+			game1 = Game("", ai, opponent, tStack, tile1, std::pair<int,int> (72,72));
+			game2 = Game("", opponent, ai, tStack, tile1, std::pair<int,int> (72,72));
 			game1_success = 0;
 			game2_success = 0;
 			for (int i = 0; i < number_of_tiles; i++)
@@ -275,15 +277,47 @@ void matchProtocol(Client &client, std::string &message_list)
 		}
 		else if (message.compare(0,1,"G") == 0)
 		{
-			std::cout << "	GAME OVER MESSAGE RECEIVED #" << count << std::endl;
-			count++;
-			if (count == 2)
-				lastMessage = false;
-			else
+			std::cout << "	GAME OVER SEND OUTCOME MESSAGE RECEIVED" << std::endl;
+			//generating message for outcome of first game
+			GAME_ID = message.substr(5,message.find(" OVER")-5);
+			//the following statement creates a message assumming the game class keeps the score for both players
+			/*		SCORING FEATURE NOT IMPLEMENTED
+			if (GAME_ID == game1.getID())
+				message_to_send1 = "GAME " + GAME_ID + " OVER PLAYER " + PLAYER_ID + " " + game1.score(ai) + " PLAYER " + OPPONENT_ID + " " game1.score(opponent) + "\r\n";
+			if (GAME_ID == game2.getID())
+				message_to_send1 = "GAME " + GAME_ID + " OVER PLAYER " + OPPONENT_ID + " " + game2.score(opponent) + " PLAYER " + PLAYER_ID + " " + game2.score(ai) + "\r\n";
+			*/
+			//generating message for outcome of second game
+			message = getMesssage(client, message_list);
+			std::cout << GREEN << "Server sent: " << RESET << message << std::endl;
+			GAME_ID = message.substr(5,message.find(" OVER")-5);
+			//the following statement creates a message assumming the game class keeps the score for both players
+			/*		SCORING FEATURE NOT IMPLEMENTED
+			if (GAME_ID == game1.getID())
+				message_to_send2 = "GAME " + GAME_ID + " OVER PLAYER " + PLAYER_ID + " " + game1.score(ai) + " PLAYER " + OPPONENT_ID + " " game1.score(opponent) + "\r\n";
+			if (GAME_ID == game2.getID())
+				message_to_send2 = "GAME " + GAME_ID + " OVER PLAYER " + OPPONENT_ID + " " + game2.score(opponent) + " PLAYER " + PLAYER_ID + " " + game2.score(ai) + "\r\n";
+			*/
+			//sending outcome for game 1 and game 2
+			std::cout << RED << "	We sent: " << RESET << message_to_send1 << std::endl;
+			client.sendMessage(message_to_send1);
+			std::cout << RED << "	We sent: " << RESET << message_to_send2 << std::endl;
+			client.sendMessage(message_to_send2);
+
+			while (count > 0)
 			{
 				message = getMesssage(client, message_list);
 				std::cout << GREEN << "Server sent: " << RESET << message << std::endl;
+
+				std::istringstream buffer(message);
+				std::istream_iterator<std::string> beg(buffer), end;
+				std::vector<std::string> messageWords(beg,end);   //Put all the words from the message into a vector
+
+				if (messageWords[6] != "FORFEITED:")
+					count--;
 			}
+
+			lastMessage = false;
 		}
 		else //hopefully this is never reached
 		{
@@ -433,7 +467,7 @@ int main(int argc, char *argv[]) {
 
 	//starting auth protocol...
 
-	std::string PLAYER_ID = authenticationProtocol(serverConnection, TOURNAMENT_PASS, TEAM_ID, TEAM_PASSWORD);
+	PLAYER_ID = authenticationProtocol(serverConnection, TOURNAMENT_PASS, TEAM_ID, TEAM_PASSWORD);
 	challengeProtocol(serverConnection);
 
 	return 0;

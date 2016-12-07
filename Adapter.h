@@ -19,7 +19,7 @@ struct values_t {
 	std::pair<int, int> tiger_spot;
 	std::string gameId, moveNumber;
 	std::string playerId;
-	bool croc, tiger;
+	bool croc, tiger, goat;
 	int forfeit = 0;
 	int meepleZone;
 };

@@ -421,6 +421,10 @@ values_t Adapter::parseGameMove(std::string message)
 		out.tiger = true;
 	else
 		out.tiger = false;
+	if (animalType == "GOAT")
+		out.goat = true;
+	else
+		out.goat = false;
 
 
     if(messageWords.size() == 14 && animalType == "TIGER"){

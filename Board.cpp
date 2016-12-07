@@ -202,7 +202,7 @@ int Board::positionPoints(int i, int j)
 	const int TRAIL_POINTS = 1;
 
 	int points = 0;
-	// for the following if statements you'll be checking the positions adjacent tiles and adding points based on 
+	// for the following if statements you'll be checking the positions adjacent tiles and adding points based on
 	// the adjacents tile's face as well as existing animals within that tile.
 	if (m_board[i + 1][j] != NULL)
 	{
@@ -310,6 +310,12 @@ void Board::placeCroc(int i, int j)
   m_board[i][j]->setCrocodile();
 }
 
+// Place a goat on a tile in the board
+void Board::placeGoat(int i, int j)
+{
+  m_board[i][j]->setGoat();
+}
+
 // Place a tile on the board. Make sure all neighboring tiles are pointing to the corresponding faces
 void Board::place_tile(std::pair<int, int> location, Tile &tile)
 {
@@ -340,7 +346,7 @@ Structure Board::checkJungle(Tile *tile, std::vector< std::vector<Block> >& tile
 	return jungleStruct;
 }
 
-// Helper method to checkJungle that continues building the jungle based off its up,down,left,right neighbors 
+// Helper method to checkJungle that continues building the jungle based off its up,down,left,right neighbors
 // as well as checking if the tile is a mixed tile (shares jungle with water) and employing logic to continue traversal in that scenario
 void Board::buildJungle(Structure* struc, Tile *tile, std::vector< std::vector<Block> >& tileBlocks, std::pair<int,int> blockSpot, std::vector<Tile*> &visitedTiles) {
 	int row = blockSpot.first;
@@ -518,7 +524,7 @@ void Board::buildLake(Structure* struc, Tile *tile, std::vector< std::vector<Blo
 		// 	struc->buffaloCount++;
 	}
 
-	// Check tiles above, below, left, and right of the current block to see if lake structure continues. 
+	// Check tiles above, below, left, and right of the current block to see if lake structure continues.
 	// Call this function with the new coordinates (of the direction you're going) again if it does
 	if((row + 1) <= 2 && !(tileBlocks[row + 1][col].isVisited()) && tileBlocks[row+1][col].getType() == "lake") {
 		buildLake(struc, tile, tileBlocks, std::pair<int,int>(row+1,col), visitedTiles);
